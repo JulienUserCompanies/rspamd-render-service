@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: rspamd-api
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
