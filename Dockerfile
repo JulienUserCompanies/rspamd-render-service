@@ -6,7 +6,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl ca-certificates gnupg \
     python3 python3-pip \
-    redis-server rspamd \
+    redis-server redis-tools \
+    rspamd \
+    iproute2 net-tools procps \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
