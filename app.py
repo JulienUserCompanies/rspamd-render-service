@@ -9,6 +9,18 @@ RSPAMD_URL = "http://127.0.0.1:11333/checkv2"
 class CheckRequest(BaseModel):
     content: str
 
+@app.get("/")
+async def root():
+    return {
+        "service": "Rspamd wrapper API",
+        "status": "ok",
+        "routes": ["/health", "/check"],
+    }
+
+@app.get("/health")
+async def health():
+    return {"ok": True}
+
 def normalize_rspamd(data: dict) -> dict:
     raw_score = float(data.get("score", 0))
     threshold = float(data.get("required_score", 15.0))
@@ -43,10 +55,6 @@ def normalize_rspamd(data: dict) -> dict:
         "version": "Rspamd external service"
     }
 
-@app.get("/health")
-async def health():
-    return {"ok": True}
-
 @app.post("/check")
 async def check(req: CheckRequest):
     if not req.content.strip():
@@ -57,18 +65,21 @@ async def check(req: CheckRequest):
             response = await client.post(
                 RSPAMD_URL,
                 content=req.content.encode("utf-8"),
-                headers={
-                    "Content-Type": "message/rfc822"
-                }
+                headers={"Content-Type": "message/rfc822"},
             )
 
         if response.status_code >= 400:
-            raise HTTPException(status_code=502, detail=f"Rspamd returned {response.status_code}")
+            raise HTTPException(
+                status_code=502,
+                detail=f"Rspamd returned {response.status_code}"
+            )
 
         data = response.json()
         return normalize_rspamd(data)
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Rspamd timeout")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Rspamd local service unavailable")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
