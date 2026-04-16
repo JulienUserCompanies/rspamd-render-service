@@ -7,6 +7,7 @@ MAX_WAIT=30
 
 echo "==> Preparing directories..."
 mkdir -p /run/rspamd /var/lib/rspamd /etc/rspamd/local.d /var/log/rspamd
+chown -R _rspamd:_rspamd /run/rspamd /var/lib/rspamd /var/log/rspamd || true
 
 echo "==> Writing Rspamd normal worker config..."
 cat > /etc/rspamd/local.d/worker-normal.inc <<EOF
@@ -29,7 +30,7 @@ for i in $(seq 1 "$MAX_WAIT"); do
 done
 
 echo "==> Starting Rspamd..."
-rspamd -f &
+rspamd -f -u _rspamd -g _rspamd &
 RSPAMD_PID=$!
 
 echo "==> Waiting for Rspamd on ${RSPAMD_HOST}:${RSPAMD_PORT}..."
